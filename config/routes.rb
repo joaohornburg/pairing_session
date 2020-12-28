@@ -3,5 +3,6 @@ Rails.application.routes.draw do
 
   resource 'url', only: [:create] do
     get 'u/:shortened', to: 'urls#show'
+    get '/', to: 'urls#index'
   end
 end

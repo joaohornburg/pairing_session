@@ -63,6 +63,12 @@ RSpec.describe UrlsController, type: :controller do
             parsed_response = JSON.parse(response.body)
             expect(parsed_response['url']).to eq test_url
           end
+
+          it 'increments the url hit count' do
+            expect do
+              get :show, params: params
+            end.to change { Url.find_by(url: test_url).hits }.by(1) 
+          end
         end
 
         context 'url does not exist' do
@@ -72,6 +78,28 @@ RSpec.describe UrlsController, type: :controller do
             get :show, params: params
             expect(response).to have_http_status(:not_found)
           end
+        end
+      end
+    end
+
+    describe 'GET index' do
+      context 'with valid params' do
+        let!(:url_1) { Url.create(url: test_url, hits: 20) }
+        let(:test_url_2) { 'https://anotherurl.com' }
+        let!(:url_2) { Url.create(url: test_url_2, hits: 5) }
+
+        before do
+          100.times do
+            Url.create!(url: "http://www.#{Time.now}#{Random.rand}.com")
+          end
+        end
+
+        it 'returns a list of urls, ordered by hits, limited to 100' do
+          get :index
+          parsed_response = JSON.parse(response.body)
+          expect(parsed_response[0]).to eq({ 'url' => test_url, 'hit_count' =>  url_1.hits})
+          expect(parsed_response[1]).to eq({ 'url' => test_url_2, 'hit_count' =>  url_2.hits})
+          expect(parsed_response.count).to eq 100
         end
       end
     end

@@ -10,10 +10,16 @@ class UrlsController < ApplicationController
     url_id = UrlUnshortener.call(unshortened_url_params)
     url = Url.where(id: url_id).first
     if url
+      url.update(hits: url.hits + 1) # TODO: move to a job to optimize performance
       render json: { url: url.url }
     else
       head :not_found
     end
+  end
+
+  def index
+    urls = Url.order(hits: :desc).limit(100)
+    render json: urls.map {|url| { url: url.url, hit_count: url.hits } }
   end
 
   private
